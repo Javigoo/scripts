@@ -26,7 +26,7 @@ def open_webdriver():
 def skip_warning_unsafe_page(driver):
     driver.find_element_by_id('details-button').click()
     driver.find_element_by_id('proceed-link').click()
-    
+
 def login_router(driver):
     try:
         # Wait as long as required, or maximum of 5 sec for alert to appear
@@ -36,7 +36,6 @@ def login_router(driver):
 
     except:
         print('TIMEOUT - login_router')
-        sys.exit(-1)
 
     get_login_data()
     username.send_keys(get_username())
@@ -47,13 +46,12 @@ def get_wifi_devices(driver):
     devices = []
 
     try:
-        # Wait as long as required, or maximum of 10 sec for alert to appear
+        # Wait as long as required, or maximum of 15 sec for alert to appear
         wait = WebDriverWait(driver, 15)
         connected_devices = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="content"]/div[2]/div/div[1]')))
 
     except:
         print('TIMEOUT - get_wifi_devices')
-        sys.exit(-1)
 
     source_code = connected_devices.get_attribute("outerHTML")
     connected_devices = source_code.split('<div class="text small-text">')
@@ -68,10 +66,10 @@ def get_login_data():
     if 'login.dat' not in os.listdir("."):
         username = str(input("Username: "))
         password = str(getpass.getpass())
-        with open('login.dat', 'w') as f: 
+        with open('login.dat', 'w') as f:
             f.write(username)
             f.write(" ")
-            f.write(password) 
+            f.write(password)
 
 def get_username():
     with open('login.dat', 'r') as f:
@@ -89,7 +87,7 @@ def device_proprietary_parser():
             proprietary = device_proprietary.split(':')[0]
             device = device_proprietary.strip().split(':')[1].split(',')
             proprietary_devices_list[proprietary] = device
-    
+
     return proprietary_devices_list
 
 def get_proprietary_connected_devices(connected_devices, proprietary_devices_list):
@@ -108,7 +106,11 @@ def get_proprietary_connected_devices(connected_devices, proprietary_devices_lis
 
 def show_proprietary_connected_devices(proprietary_connected_devices):
     for proprietary in proprietary_connected_devices.keys():
-        print(proprietary+' conectado con '+ ', '.join(proprietary_connected_devices[proprietary]))
+        if proprietary_connected_devices[proprietary] != []:
+            if proprietary == 'Otros dispositivos':
+                print(proprietary + ': ' + ', '.join(proprietary_connected_devices[proprietary]))
+            else:
+                print(proprietary+' conectado con '+ ', '.join(proprietary_connected_devices[proprietary]))
 
 def show_unknown_connected_devices(connected_devices, known_connected_devices):
     unknown_connected_devices = []
@@ -118,13 +120,18 @@ def show_unknown_connected_devices(connected_devices, known_connected_devices):
         if device not in known_connected_devices:
             unknown_connected_devices.append(device)
 
-    print('\nDispositivos desconocidos: '+', '.join(unknown_connected_devices))
+    if unknown_connected_devices != []:
+        print('\nDispositivos desconocidos: '+', '.join(unknown_connected_devices))
 
-if __name__ == "__main__":
+def main():
+    os.system('clear')
+
     driver = open_webdriver()
     login_router(driver)
     connected_devices = get_wifi_devices(driver)
 
+    from datetime import datetime
+    print(datetime.now().strftime('%Y-%m-%d %H:%M:%S\n'))
     print('Dispositivos conectados:', ', '.join(connected_devices) + '\n')
 
     device_proprietary_list = device_proprietary_parser()
@@ -133,3 +140,6 @@ if __name__ == "__main__":
 
     show_proprietary_connected_devices(proprietary_connected_devices)
     show_unknown_connected_devices(connected_devices, proprietary_connected_devices.values())
+
+if __name__ == "__main__":
+    main()
